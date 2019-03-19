@@ -17,7 +17,7 @@ return [
 //	'schemaCacheDuration' => 604800, // 1 week; Need caching
 
     'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;port=3306;dbname=medipackdatabase',
+    'dsn' => 'mysql:host=localhost;port=3306;dbname=medipack_db',
     'username' => 'root',
     'password' => '',
     'charset' => 'utf8',

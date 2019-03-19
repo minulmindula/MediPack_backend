@@ -37,6 +37,10 @@ use app\components\Utils;
  */
 class User extends \yii\db\ActiveRecord
 {
+
+    var $role4Doc = '3';
+    var $role4User = '2';
+
     /**
      * @inheritdoc
      */
@@ -146,17 +150,13 @@ class User extends \yii\db\ActiveRecord
       
         foreach ($stmt as $a){
             $array[] = array(
-                'id' => $a['id'],
-                'deviceID' => $a['device_id'],
+                'userid' => $a['userid'],
                 'roleID' => $a['roleId'], 
-                'rolename' => $a['roleName'],
                 'username' => $a['username'],
                 'firstname' => $a['firstname'],
                 'lastname' => $a['lastname'],
-                'surname' => $a['surname'],
                 'contact' => $a['contact'],
-                'status' => $a['status'],
-                'sessionID' => $a['sessionId']
+                'status' => $a['status']
             );
         }
         
@@ -173,24 +173,34 @@ class User extends \yii\db\ActiveRecord
 
         $username = strtolower($firstname);
 
-        $query = "INSERT INTO " . $this->tableName() . 
-                "(`id`,`username`, `roleName`, `firstname`, `lastname`, `contact`, `password`, `roleId`, `userCreated`,`timeCreated`) ".
-                "VALUES (:id,:username,:roleName,:firstname,:lastname,:contact,:pass,:roleId,:userCreated,:timeCreated) " ;
+        //Check for data in DB
+        $validateQuery = "SELECT firstname, lastname FROM user WHERE `firstname` = '$firstname' AND `lastname` = '$lastname' ";
+        $validate = $db->createCommand($validateQuery)->query();
+
+        if(count($validate) > 0)
+        {
+            return false;
+
+        }else{
+            $query = "INSERT INTO " . $this->tableName() . 
+            "(`userid`,`username`, `firstname`, `lastname`, `contact`, `password`, `roleId`, `userCreatedTime`) ".
+            "VALUES (:id,:username,:firstname,:lastname,:contact,:pass,:roleId,:userCreated) " ;
+    
+            $stmt = $db->createCommand($query)
+                    ->bindValue(':id', Utils::getUniqUserId())
+                    ->bindValue(':username', $username . '_' .date('dhs'))
+                    ->bindValue(':firstname', $firstname)
+                    ->bindValue(':lastname', $lastname)
+                    ->bindValue(':contact', $contact)
+                    ->bindValue(':pass', $passHash)
+                    ->bindValue(':roleId', $this->role4User)
+                    ->bindValue(':userCreated', date('Y-m-d'))
+                    ->execute();
+            
+            return true;
+
+        }
         
-        $stmt = $db->createCommand($query)
-                   ->bindValue(':id', Utils::getUniqUserId())
-                   ->bindValue(':username', $username . '_' .date('dhs'))
-                   ->bindValue(':roleName', 'AppUser')
-                   ->bindValue(':firstname', $firstname)
-                   ->bindValue(':lastname', $lastname)
-                   ->bindValue(':contact', $contact)
-                   ->bindValue(':pass', $passHash)
-                   ->bindValue(':roleId', '20')
-                   ->bindValue(':userCreated', '1')
-                   ->bindValue(':timeCreated', date('Y-m-d H:i:s'))
-                   ->execute();
-        
-        return true;
     }
 
     //Register doctor
@@ -202,28 +212,38 @@ class User extends \yii\db\ActiveRecord
 
         $username = strtolower($firstname);
 
-        if($author == 'admin')
+        //Check for data in DB
+        $validateQuery = "SELECT firstname, lastname FROM user WHERE `firstname` = '$firstname' AND `lastname` = '$lastname' ";
+        $validate = $db->createCommand($validateQuery)->query();
+
+        if(count($validate) > 0)
         {
-            $query = "INSERT INTO " . $this->tableName() . 
-            "(`id`,`username`, `roleName`, `firstname`, `lastname`, `contact`, `password`, `roleId`, `userCreated`,`timeCreated`) ".
-            "VALUES (:id,:username,:roleName,:firstname,:lastname,:contact,:pass,:roleId,:userCreated,:timeCreated) " ;
-    
-            $stmt = $db->createCommand($query)
-                    ->bindValue(':id', Utils::getUniqUserId())
-                    ->bindValue(':username', $username . '_' .date('dhs'))
-                    ->bindValue(':roleName', 'Doctor')
-                    ->bindValue(':firstname', $firstname)
-                    ->bindValue(':lastname', $lastname)
-                    ->bindValue(':contact', $contact)
-                    ->bindValue(':pass', $passHash)
-                    ->bindValue(':roleId', '10')
-                    ->bindValue(':userCreated', '1')
-                    ->bindValue(':timeCreated', date('Y-m-d H:i:s'))
-                    ->execute();
-            
-            return true;
+            return false;
+
         }else{
-            return "You are not authorized to perform this action!";
+
+            if($author == 'admin')
+            {
+                $query = "INSERT INTO " . $this->tableName() . 
+                "(`userid`,`username`, `firstname`, `lastname`, `contact`, `password`, `roleId`, `userCreatedTime`) ".
+                "VALUES (:id,:username,:firstname,:lastname,:contact,:pass,:roleId,:userCreatedTime) " ;
+        
+                $stmt = $db->createCommand($query)
+                        ->bindValue(':id', Utils::getUniqUserId())
+                        ->bindValue(':username', $username . '_' .date('dhs'))
+                        ->bindValue(':firstname', $firstname)
+                        ->bindValue(':lastname', $lastname)
+                        ->bindValue(':contact', $contact)
+                        ->bindValue(':pass', $passHash)
+                        ->bindValue(':roleId', $this->role4Doc)
+                        ->bindValue(':userCreatedTime', date("Y-m-d H-i-s"))
+                        ->execute();
+                
+                return true;
+            }else{
+                return "You are not authorized to perform this action!";
+            }
+
         }
 
         

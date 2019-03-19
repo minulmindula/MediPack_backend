@@ -47,7 +47,7 @@ class ApiController extends JsonController
 				'only' => [
 					'authnz', 'read-all', 'show-doctors-online', 'get-active-times', 'medicine-activity',
 					'next-med-time', 'med-status', 'update-medicine-activity', 'current-day-schedule', 'get-schedule-after-tomorrow',
-					'get-weekly-schedule', 'register-app-user', 'register-doc', 'get-next-med-time'
+					'get-weekly-schedule', 'register-app-user', 'register-doc', 'get-next-med-time', 'get-summary-of-day'
 				],
 
 				'rules' => [[
@@ -57,7 +57,7 @@ class ApiController extends JsonController
 					'actions' => [
 						'authnz', 'authn-patient', 'authn-doc', 'show-doctors-online', 'get-active-times', 'medicine-activity',
 						'next-med-time', 'med-status', 'update-medicine-activity', 'current-day-schedule', 'get-schedule-after-tomorrow',
-						'get-weekly-schedule', 'register-app-user', 'register-doc', 'get-next-med-time'
+						'get-weekly-schedule', 'register-app-user', 'register-doc', 'get-next-med-time', 'get-summary-of-day'
 					],
 				], [
 					// Authorized
@@ -115,13 +115,15 @@ class ApiController extends JsonController
 			$password
 		);
 
-		$this->setOutputData($data);
+		
 
-		if($data != null)
+		if($data == true)
 		{
 			$this->setOutputStatus(true);
+			$this->setOutputData('User added successfully');
 		}else{
 			$this->setOutputStatus(false);
+			$this->setOutputData('User already exists');
 		}
 
 	}
@@ -164,21 +166,50 @@ class ApiController extends JsonController
 		$post = Yii::$app->request->post();
 
 		$currentTime = @$post['currentTime'];
+		$userid = @$post['userid'];
 
 		$data = (new MedActivity())->getNextMedTime(
-			$currentTime
+			$currentTime,
+			$userid
 		);
 
-		$this->setOutputData($data);
-
-		if($data != null)
+		if($data == true)
 		{
 			$this->setOutputStatus(true);
+			$this->setOutputData($data);
 		}else{
 			$this->setOutputStatus(false);
+			$this->setOutputData("Invalid userid!");
 		}
 
 	}
+
+
+	//Get summary details per day
+    public function actionGetSummaryOfDay()
+    {
+        $post = Yii::$app->request->post();
+
+        $userid = @$post['userid'];
+        $day = @$post['dow'];
+        $time = @$post['currentTimeHrs'];
+
+        $data = (new MedActivity())->getSummaryOfDay(
+            $userid,
+            $day,
+            $time
+        );
+
+        if($data == true)
+        {
+            $this->setOutputStatus(true);
+            $this->setOutputData($data);
+        }else{
+            $this->setOutputStatus(false);
+            $this->setOutputData("Invalid userid!");
+        }
+
+    }
 
 
 }
