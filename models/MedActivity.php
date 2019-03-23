@@ -234,5 +234,63 @@ class MedActivity extends \yii\db\ActiveRecord
     }
 
 
+    public function getWeeklySchedule($userid)
+    {
+        $db = Yii::$app->db;
+        $array = [];
+
+        $query = "SELECT d.days, m.morningStatus, m.afternoonStatus, m.nightStatus FROM medactivity m ".
+                 "INNER JOIN daysofweek d ".
+                 "ON m.dow_id = d.id ".
+                 "WHERE m.user_id = :userid ".
+                 "ORDER BY m.dow_id ASC ";
+
+        $stmt = $db->createCommand($query)
+                   ->bindValue(':userid', $userid)
+                   ->query();
+
+        foreach($stmt as $row)
+        {
+            $array[] = array(
+                'day' => $row['days'],
+                'morning' => $row['morningStatus'],
+                'afternoon' => $row['afternoonStatus'],
+                'night' => $row['nightStatus']
+            );
+        }
+
+        return $array;
+    }
+
+
+    public function getSingledaySchedule($userid, $day)
+    {
+        $db = Yii::$app->db;
+        $array = [];
+
+        $query = "SELECT d.days, m.morningStatus, m.afternoonStatus, m.nightStatus FROM medactivity m ".
+                 "INNER JOIN daysofweek d ".
+                 "ON m.dow_id = d.id ".
+                 "WHERE m.user_id = :userid AND d.days = :day ";
+
+        $stmt = $db->createCommand($query)
+                   ->bindValue(':userid', $userid)
+                   ->bindValue(':day', $day)
+                   ->query();
+
+        foreach($stmt as $row)
+        {
+            $array[] = array(
+                'day' => $row['days'],
+                'morning' => $row['morningStatus'],
+                'afternoon' => $row['afternoonStatus'],
+                'night' => $row['nightStatus']
+            );
+        }
+
+        return $array;
+    }
+
+
     
 }

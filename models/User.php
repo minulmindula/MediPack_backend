@@ -141,11 +141,12 @@ class User extends \yii\db\ActiveRecord
 
         $passHash = Utils::encryptPassword($password);
 
-        $query = "SELECT * FROM ".$this->tableName()." WHERE username = :username AND password = :pass ";
+        $query = "SELECT * FROM ".$this->tableName()." WHERE username = :username AND password = :pass AND roleId = :roleId ";
 
         $stmt = $db->createCommand($query)
                 ->bindValue(':username', $username)
                 ->bindValue(':pass', $passHash)
+                ->bindValue(':roleId', '2')
                 ->query();
       
         foreach ($stmt as $a){
@@ -162,6 +163,38 @@ class User extends \yii\db\ActiveRecord
         
         return $array;
 
+    }
+
+
+    //Authentication for doctor
+    public function authnzDoc($username, $password)
+    {
+        $db = Yii::$app->db;
+        $array = [];
+
+        $passHash = Utils::encryptPassword($password);
+
+        $query = "SELECT * FROM ".$this->tableName()." WHERE username = :username AND password = :pass AND roleId = :roleId ";
+
+        $stmt = $db->createCommand($query)
+            ->bindValue(':username', $username)
+            ->bindValue(':pass', $passHash)
+            ->bindValue(':roleId', '3')
+            ->query();
+
+        foreach ($stmt as $a){
+            $array[] = array(
+                'userid' => $a['userid'],
+                'roleID' => $a['roleId'],
+                'username' => $a['username'],
+                'firstname' => $a['firstname'],
+                'lastname' => $a['lastname'],
+                'contact' => $a['contact'],
+                'status' => $a['status']
+            );
+        }
+
+        return $array;
     }
 
     //Register app user
@@ -247,6 +280,29 @@ class User extends \yii\db\ActiveRecord
         }
 
         
+    }
+
+
+    public function showOnlineDoctors()
+    {
+        $db = Yii::$app->db;
+        $array = [];
+
+        $query = "SELECT * FROM user WHERE `roleId` = '3' ";
+
+        $stmt = $db->createCommand($query)->query();
+
+        foreach($stmt as $row)
+        {
+            $array[] = array(
+                'userid' => $row['userid'],
+                'firstname' => $row['firstname'],
+                'lastname' => $row['lastname'],
+                'status' => $row['status']
+            );
+        }
+
+        return $array;
     }
 
 
