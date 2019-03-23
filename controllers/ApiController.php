@@ -8,6 +8,8 @@
  */
 namespace app\controllers;
 
+use app\models\DoctorAppointments;
+use app\models\Hospitaldetails;
 use Exception;
 use Yii;
 use yii\filters\AccessControl;
@@ -45,9 +47,8 @@ class ApiController extends JsonController
 				},
 
 				'only' => [
-					'authnz', 'read-all', 'show-doctors-online', 'get-active-times', 'medicine-activity',
-					'next-med-time', 'med-status', 'update-medicine-activity', 'current-day-schedule', 'get-schedule-after-tomorrow',
-					'get-weekly-schedule', 'register-app-user', 'register-doc', 'get-next-med-time'
+					'authnz', 'authnz-doc', 'register-app-user', 'register-doc', 'get-next-med-time', 'get-summary-of-day',
+                    'get-weekly-schedule', 'get-singleday-schedule', 'get-doctors', 'get-hospital-emg-contact', 'get-doctor-appointments'
 				],
 
 				'rules' => [[
@@ -55,9 +56,8 @@ class ApiController extends JsonController
 					'allow' => true,
 					'roles' => ['?'],
 					'actions' => [
-						'authnz', 'authn-patient', 'authn-doc', 'show-doctors-online', 'get-active-times', 'medicine-activity',
-						'next-med-time', 'med-status', 'update-medicine-activity', 'current-day-schedule', 'get-schedule-after-tomorrow',
-						'get-weekly-schedule', 'register-app-user', 'register-doc', 'get-next-med-time'
+                        'authnz', 'authnz-doc', 'register-app-user', 'register-doc', 'get-next-med-time', 'get-summary-of-day',
+                        'get-weekly-schedule', 'get-singleday-schedule', 'get-doctors', 'get-hospital-emg-contact', 'get-doctor-appointments'
 					],
 				], [
 					// Authorized
@@ -96,6 +96,28 @@ class ApiController extends JsonController
 		
 	}
 
+	public function actionAuthnzDoc()
+    {
+        $post = Yii::$app->request->post();
+
+        $username = @$post['username'];
+        $password = @$post['password'];
+
+        $data = (new User())->authnzDoc(
+            $username,
+            $password
+        );
+
+        $this->setOutputData($data);
+
+        if($data != null)
+        {
+            $this->setOutputStatus(true);
+        }else{
+            $this->setOutputStatus(false);
+        }
+    }
+
 	//Register app user
 	public function actionRegisterAppUser()
 	{
@@ -115,13 +137,15 @@ class ApiController extends JsonController
 			$password
 		);
 
-		$this->setOutputData($data);
+		
 
-		if($data != null)
+		if($data == true)
 		{
 			$this->setOutputStatus(true);
+			$this->setOutputData('User added successfully');
 		}else{
 			$this->setOutputStatus(false);
+			$this->setOutputData('User already exists');
 		}
 
 	}
@@ -164,21 +188,142 @@ class ApiController extends JsonController
 		$post = Yii::$app->request->post();
 
 		$currentTime = @$post['currentTime'];
+		$userid = @$post['userid'];
 
 		$data = (new MedActivity())->getNextMedTime(
-			$currentTime
+			$currentTime,
+			$userid
 		);
 
-		$this->setOutputData($data);
-
-		if($data != null)
+		if($data == true)
 		{
 			$this->setOutputStatus(true);
+			$this->setOutputData($data);
 		}else{
 			$this->setOutputStatus(false);
+			$this->setOutputData("Invalid userid!");
 		}
 
 	}
+
+
+	//Get summary details per day
+    public function actionGetSummaryOfDay()
+    {
+        $post = Yii::$app->request->post();
+
+        $userid = @$post['userid'];
+        $day = @$post['dow'];
+        $time = @$post['currentTimeHrs'];
+
+        $data = (new MedActivity())->getSummaryOfDay(
+            $userid,
+            $day,
+            $time
+        );
+
+        if($data == true)
+        {
+            $this->setOutputStatus(true);
+            $this->setOutputData($data);
+        }else{
+            $this->setOutputStatus(false);
+            $this->setOutputData("Invalid userid!");
+        }
+
+    }
+
+    //Weekly schedule
+    public function actionGetWeeklySchedule()
+    {
+        $post = Yii::$app->request->post();
+
+        $userid = @$post['userid'];
+
+        $data = (new MedActivity())->getWeeklySchedule(
+            $userid
+        );
+
+        if($data == true)
+        {
+            $this->setOutputStatus(true);
+            $this->setOutputData($data);
+        }else{
+            $this->setOutputStatus(false);
+            $this->setOutputData("Invalid userid!");
+        }
+
+    }
+
+
+    //Get single day schedule
+    public function actionGetSingledaySchedule()
+    {
+        $post = Yii::$app->request->post();
+
+        $userid = @$post['userid'];
+        $day = @$post['day'];
+
+        $data = (new MedActivity())->getSingledaySchedule(
+            $userid,
+            $day
+        );
+
+        if($data == true)
+        {
+            $this->setOutputStatus(true);
+            $this->setOutputData($data);
+        }else{
+            $this->setOutputStatus(false);
+            $this->setOutputData("Invalid userid or incorrect day entered!");
+        }
+
+    }
+
+
+    //Get Doctor details
+    public function actionGetDoctors()
+    {
+        $data = (new User())->showOnlineDoctors();
+
+        $this->setOutputData($data);
+        $this->setOutputStatus(true);
+        $this->setOutputTotal(count($data));
+    }
+
+
+    //Get hospital details
+    public function actionGetHospitalEmgContact()
+    {
+        $data = (new Hospitaldetails())->getHospitalEmg();
+
+        $this->setOutputData($data);
+        $this->setOutputStatus(true);
+        $this->setOutputTotal(count($data));
+    }
+
+    //GetDoctorAppointment
+    public function actionGetDoctorAppointments()
+    {
+        $post = Yii::$app->request->post();
+
+        $username = @$post['username'];
+        $date = @$post['curDate'];
+
+        $data = (new DoctorAppointments())->getDocAppointment(
+            $username,
+            $date
+        );
+
+        if($data == true)
+        {
+            $this->setOutputStatus(true);
+            $this->setOutputData($data);
+        }else{
+            $this->setOutputStatus(false);
+            $this->setOutputData("No data!");
+        }
+    }
 
 
 }
